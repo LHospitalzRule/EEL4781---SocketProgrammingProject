@@ -13,8 +13,11 @@ int main(int argc, char **argv)
 
   if (argc != 3) fatal("Usage: client server-name file-name");
   
+  /*
+    Use DNS to get the IP address of the desired remote host.
+  */
   h = gethostbyname(argv[1]);		/* look up host's IP address */
-  if (!h) fatal("gethostbyname failed");
+  if (!h) fatal("gethostbyname DNS-query failed. No host present.");
 
   // Socket Creation, TCP
   net_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
