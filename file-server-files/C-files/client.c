@@ -6,32 +6,61 @@
 
 int main(int argc, char **argv)
 {
-  int c, s, bytes;
+  int c, net_socket, bytes;
   char buf[BUF_SIZE];		/* buffer for incoming file */
   struct hostent *h;		/* info about server */
   struct sockaddr_in channel;		/* holds IP address */
 
   if (argc != 3) fatal("Usage: client server-name file-name");
+  
   h = gethostbyname(argv[1]);		/* look up host's IP address */
   if (!h) fatal("gethostbyname failed");
 
-  s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if (s <0) fatal("socket");
+  // Socket Creation, TCP
+  net_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (net_socket <0) fatal("socket");
+  
+  /*  -------
+      socket() - Socket creation.
+      -------
+  */  
+  // Remote socket to connect to
   memset(&channel, 0, sizeof(channel));
-  channel.sin_family= AF_INET;
+  channel.sin_family= AF_INET;  // specify family of the address socket
+
+  // Providing port # for both ends
   memcpy(&channel.sin_addr.s_addr, h->h_addr, h->h_length);
-  channel.sin_port= htons(SERVER_PORT);
+  channel.sin_port= htons(SERVER_PORT); // uses port value provided by file-server.h
 
-  c = connect(s, (struct sockaddr *) &channel, sizeof(channel));
-  if (c < 0) fatal("connect failed");
+  /*  -------
+      connect() - TCP Handshake with server.
+      -------
+  */  
+  c = connect(net_socket, (struct sockaddr *) &channel, sizeof(channel));
+  if (c < 0) fatal("Connection Error to the remote socket.\n\n"); // Check connection process connect() for error
 
+  /*  -------
+      Start by sending a filename to request file sending to the server.
+      -------
+  */  
   /* Connection is now established. Send file name including 0 byte at end. */
-  write(s, argv[2], strlen(argv[2])+1);
+  write(net_socket, argv[2], strlen(argv[2])+1);
 
-  /* Go get the file and write it to standard output. */
-  while (1) {
-        bytes = read(s, buf, BUF_SIZE);	/* read from socket */
-        if (bytes <= 0) exit(0);		/* check for end of file */
-        write(1, buf, bytes);		/* write to standard output */
-  }
+  FILE *outfile = fopen(argv[2], "wb");
+    if (!outfile) fatal("fopen() failed — cannot create output file");
+
+    while (1) {
+        bytes = read(net_socket, buf, BUF_SIZE); /* read a chunk from socket  */
+        if (bytes <= 0) break;                   /* 0 = server closed (EOF)
+                                                    <0 = error; stop either way */
+        fwrite(buf, 1, bytes, outfile);          /* write exactly those bytes
+                                                    to the file, no extras      */
+    }
+ 
+    /* ---------------------------------------------------------------
+     * CLEANUP
+     * Close both the file and the socket when done.
+     * --------------------------------------------------------------- */
+    fclose(outfile);
+    close(net_socket);
 }

@@ -11,7 +11,7 @@
 
 int main(int argc, char *argv[])
 {	
-  int s, b, l, fd, sa, bytes, on = 1;
+  int net_socket, b, l, fd, sa, bytes, on = 1;
   char buf[BUF_SIZE];		/* buffer for outgoing file */
   struct sockaddr_in channel;		/* holds IP address */
 
@@ -22,19 +22,19 @@ int main(int argc, char *argv[])
   channel.sin_port = htons(SERVER_PORT);
 
   /* Passive open. Wait for connection. */
-  s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);    /* create socket */
-  if (s < 0) fatal("socket failed");
-  setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on));
+  net_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);    /* create socket */
+  if (net_socket < 0) fatal("socket failed");
+  setsockopt(net_socket, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on));
 
-  b = bind(s, (struct sockaddr *) &channel, sizeof(channel));
+  b = bind(net_socket, (struct sockaddr *) &channel, sizeof(channel));
   if (b < 0) fatal("bind failed");
 
-  l = listen(s, QUEUE_SIZE);		/* specify queue size */
+  l = listen(net_socket, QUEUE_SIZE);		/* specify queue size */
   if (l < 0) fatal("listen failed");
 
   /* Socket is now set up and bound. Wait for connection and process it. */
   while (1) {
-        sa = accept(s, 0, 0);		/* block for connection request */
+        sa = accept(net_socket, 0, 0);		/* block for connection request */
         if (sa < 0) fatal("accept failed");
 
         read(sa, buf, BUF_SIZE);		/* read file name from socket */
