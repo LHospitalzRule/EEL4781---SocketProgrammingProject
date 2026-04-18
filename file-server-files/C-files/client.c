@@ -17,7 +17,7 @@ int main(int argc, char **argv)
   if (!h) fatal("gethostbyname failed");
 
   // Socket Creation, TCP
-  net_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  net_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (net_socket <0) fatal("socket");
   
   /*  -------
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
   FILE *outfile = fopen(argv[2], "wb");
     if (!outfile) fatal("fopen() failed — cannot create output file");
- 
+
     while (1) {
         bytes = read(net_socket, buf, BUF_SIZE); /* read a chunk from socket  */
         if (bytes <= 0) break;                   /* 0 = server closed (EOF)
