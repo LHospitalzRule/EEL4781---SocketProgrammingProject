@@ -28,16 +28,23 @@ int main(int argc, char **argv)
   memset(&channel, 0, sizeof(channel));
   channel.sin_family= AF_INET;  // specify family of the address socket
 
-  // Providing port # for both ends
-  memcpy(&channel.sin_addr.s_addr, h->h_addr, h->h_length);
-  channel.sin_port= htons(SERVER_PORT); // uses port value provided by file-server.h
+  /* ---------------------------------------------------------------
+   * socket() - Socket creation, TCP
+   * --------------------------------------------------------------- */
+  net_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (net_socket < 0) fatal("socket");
 
-  /*  -------
-      connect() - TCP Handshake with server.
-      -------
-  */  
+  /* Remote socket to connect to */
+  memset(&channel, 0, sizeof(channel));
+  channel.sin_family = AF_INET;            /* specify family of the address socket */
+  memcpy(&channel.sin_addr.s_addr, h->h_addr, h->h_length);
+  channel.sin_port = htons(SERVER_PORT);   /* uses port value provided by file-server.h */
+
+  /* ---------------------------------------------------------------
+   * connect() - TCP Handshake with server.
+   * --------------------------------------------------------------- */
   c = connect(net_socket, (struct sockaddr *) &channel, sizeof(channel));
-  if (c < 0) fatal("Connection Error to the remote socket.\n\n"); // Check connection process connect() for error
+  if (c < 0) fatal("Connection Error to the remote socket.");
 
   /*  -------
       Start by sending a filename to request file sending to the server.
