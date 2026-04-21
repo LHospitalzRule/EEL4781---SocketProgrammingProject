@@ -5,30 +5,8 @@
 
 #define QUEUE_SIZE 10
 
-int main(int argc, char *argv[])
-{	
-  /* ---------------------------------------------------------------
-   * VARIABLE DECLARATIONS
-   * --------------------------------------------------------------- */
-  int net_socket;          /* welcome socket — listens for new connections  */
-  int sa;                  /* connection socket — one per accepted client    */
-  int b, l;                /* return values of bind() and listen()          */
-  int fd;                  /* file descriptor for the file being sent       */
-  int bytes;               /* bytes read from file each iteration           */
-  int on = 1;              /* used by setsockopt() to enable SO_REUSEADDR   */
-  int debug = 0;           /* DEBUG flag — 0 by default, 1 if DEBUG=1 given */
-  char buf[BUF_SIZE];      /* buffer for outgoing file                      */
 
-  /* ---------------------------------------------------------------
-   * PHASE 4: BYTE RANGE VARIABLES
-   * --------------------------------------------------------------- */
-  int start_byte = 0;      /* start of requested byte range                 */
-  int end_byte   = 0;      /* end of requested byte range                   */
 
-  struct sockaddr_in channel;      /* server's own address struct            */
-  struct sockaddr_in client_addr;  /* will hold the client's IP + port       */
-  socklen_t client_len;            /* required by accept() — size of above   */
-  char *client_ip;                 /* human-readable client IP string        */
 
 
 
@@ -47,7 +25,7 @@ int main(int argc, char *argv[])
   }
 
   /* Build address structure to bind to socket. */
-  memset(&channel, 0, sizeof(channel));  /* zero channel */
+  memset(&channel, 0, sizeof(channel));	/* zero channel */
   channel.sin_family = AF_INET;
   channel.sin_addr.s_addr = htonl(INADDR_ANY);
   channel.sin_port = htons(SERVER_PORT);
@@ -60,10 +38,8 @@ int main(int argc, char *argv[])
   b = bind(net_socket, (struct sockaddr *) &channel, sizeof(channel));
   if (b < 0) fatal("bind failed");
 
-  l = listen(net_socket, QUEUE_SIZE);    /* specify queue size */
+  l = listen(net_socket, QUEUE_SIZE);		/* specify queue size */
   if (l < 0) fatal("listen failed");
-
-  printf("Server is ready on port %d\n", SERVER_PORT);
 
   /* Socket is now set up and bound. Wait for connection and process it. */
   while (1) {
@@ -78,44 +54,13 @@ int main(int argc, char *argv[])
         if (debugFlag) printf("Sending %s to %s\n", buf, client_IP); 
 
         /* Get and return the file. */
-        fd = open(buf, O_RDONLY);   /* open the file to be sent back */
+        fd = open(buf, O_RDONLY);	/* open the file to be sent back */
         if (fd < 0) fatal("open failed");
 
-        /* ---------------------------------------------------------------
-         * PHASE 4: BYTE RANGE — lseek()
-         * If start_byte is non-zero, jump to that position in the file.
-         * Spec says bytes are 1-indexed so we seek to start_byte - 1.
-         * bytes_to_send tracks how many bytes remain to send.
-         * If both are 0, skip this and send the whole file.
-         * --------------------------------------------------------------- */
-        int bytes_to_send = -1;   /* -1 means send entire file              */
-
-        if (start_byte > 0 && end_byte >= start_byte) {
-          lseek(fd, start_byte - 1, SEEK_SET);
-          bytes_to_send = end_byte - start_byte + 1;
-        }
-
-        /* ---------------------------------------------------------------
-         * SEND FILE DATA
-         * If bytes_to_send is -1, send until EOF.
-         * Otherwise track total sent and stop at the requested range.
-         * --------------------------------------------------------------- */
-        int total_sent = 0;
-
         while (1) {
-          int to_read = BUF_SIZE;
-
-          /* Limit the final read to not overshoot the end byte             */
-          if (bytes_to_send != -1) {
-            int remaining = bytes_to_send - total_sent;
-            if (remaining <= 0) break;
-            if (remaining < BUF_SIZE) to_read = remaining;
-          }
-
-          bytes = read(fd, buf, to_read);   /* read from file               */
-          if (bytes <= 0) break;            /* check for end of file        */
-          write(sa, buf, bytes);            /* write bytes to socket        */
-          total_sent += bytes;
+                bytes = read(fd, buf, BUF_SIZE);	/* read from file */
+                if (bytes <= 0) break;		/* check for end of file */
+                write(sa, buf, bytes);		/* write bytes to socket */
         }
 
         if (debugFlag) printf("Finished sending %s to %s\n", buf, client_IP);
