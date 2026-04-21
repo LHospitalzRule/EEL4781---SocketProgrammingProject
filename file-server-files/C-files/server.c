@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 
         char *client_IP = inet_ntoa(clientAddress.sin_addr);
 
-        read(sa, buf, BUF_SIZE);
+        read(sa, buf, BUF_SIZE); /* Read file name from buffer */
 
         char filename[256];
         strcpy(filename, buf);  /* save filename before buf gets overwritten */
