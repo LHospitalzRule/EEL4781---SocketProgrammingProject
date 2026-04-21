@@ -49,9 +49,12 @@ int main(int argc, char *argv[])
 
         char *client_IP = inet_ntoa(clientAddress.sin_addr);
 
-        read(sa, buf, BUF_SIZE);		/* read file name from socket */
+        read(sa, buf, BUF_SIZE); /* Read file name from buffer */
 
-        if (debugFlag) printf("Sending %s to %s\n", buf, client_IP); 
+        char filename[256];
+        strcpy(filename, buf);  /* save filename before buf gets overwritten */
+
+        if (debugFlag) printf("Sending %s to %s\n", filename, client_IP);
 
         /* Get and return the file. */
         fd = open(buf, O_RDONLY);	/* open the file to be sent back */
@@ -63,7 +66,7 @@ int main(int argc, char *argv[])
                 write(sa, buf, bytes);		/* write bytes to socket */
         }
 
-        if (debugFlag) printf("Finished sending %s to %s\n", buf, client_IP);
+        if (debugFlag) printf("Finished sending %s to %s\n", filename, client_IP);
         
         close(fd);			/* close file */
         close(sa);			/* close connection */
