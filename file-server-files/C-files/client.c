@@ -11,7 +11,7 @@ int main(int argc, char **argv)
   struct hostent *h;		/* info about server */
   struct sockaddr_in channel;		/* holds IP address */
 
-  if (argc != 3) fatal("Usage: client server-name file-name");
+  if (argc != 3) fatal("Usage: client <server-name> <file-name>");
   
   h = gethostbyname(argv[1]);		/* look up host's IP address */
   if (!h) fatal("gethostbyname failed");
@@ -43,18 +43,23 @@ int main(int argc, char **argv)
       Start by sending a filename to request file sending to the server.
       -------
   */  
-  /* Connection is now established. Send file name including 0 byte at end. */
+
+  /* Connection is now established. Send file name including 0 byte at end.
+  
+        Write in the socket a request from the server the fileName at argv[2]
+  */
   write(net_socket, argv[2], strlen(argv[2])+1);
 
+  /* EXAMPLE: ./client <serverName> <fileName>
+            ./client eustis.eecs.ucf.edu fileName.txt
+  */
   FILE *outfile = fopen(argv[2], "wb");
     if (!outfile) fatal("fopen() failed — cannot create output file");
 
     while (1) {
         bytes = read(net_socket, buf, BUF_SIZE); /* read a chunk from socket  */
-        if (bytes <= 0) break;                   /* 0 = server closed (EOF)
-                                                    <0 = error; stop either way */
-        fwrite(buf, 1, bytes, outfile);          /* write exactly those bytes
-                                                    to the file, no extras      */
+        if (bytes <= 0) break;                   /* End if no bytes were observed in the socket */
+        fwrite(buf, 1, bytes, outfile);          /* write exactly those bytes into a file */
     }
  
     /* ---------------------------------------------------------------
