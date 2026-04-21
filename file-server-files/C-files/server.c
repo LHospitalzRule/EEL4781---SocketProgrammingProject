@@ -1,7 +1,7 @@
 /* This is the server code */
 #include "file-server.h"
 #include <sys/fcntl.h>
-#include <arpa/inet.h>   /* inet_ntoa() — converts binary IP to readable string */
+#include <arpa/inet.h>
 
 #define QUEUE_SIZE 10
 
@@ -30,16 +30,20 @@ int main(int argc, char *argv[])
   socklen_t client_len;            /* required by accept() — size of above   */
   char *client_ip;                 /* human-readable client IP string        */
 
-  /* ---------------------------------------------------------------
-   * PHASE 3: PARSE DEBUG FLAG
-   * argv[1] will be the string "DEBUG=1" if provided.
-   * strcmp returns 0 when strings match.
-   * --------------------------------------------------------------- */
-  if (argc == 2 && strcmp(argv[1], "DEBUG=1") == 0) {
-    debug = 1;
-    printf("Debug mode enabled\n");
-  } else if (argc > 2) {
-    fatal("Usage: server [DEBUG=1]");
+
+
+int main(int argc, char *argv[])
+{	
+  int net_socket, b, l, fd, sa, bytes, on = 1;
+  int debugFlag = 0; /* monitoring DEBUG mode*/
+  char buf[BUF_SIZE];		/* buffer for outgoing file */
+  struct sockaddr_in channel;		/* holds IP address for*/
+  struct sockaddr_in clientAddress;  /* Holds clientIP address*/
+  
+
+  /* Check for DEBUG flag */
+  if(argc==2 && strcmp(argv[1], "DEBUG=1") == 0){
+    debugFlag = 1;
   }
 
   /* Build address structure to bind to socket. */
@@ -63,34 +67,15 @@ int main(int argc, char *argv[])
 
   /* Socket is now set up and bound. Wait for connection and process it. */
   while (1) {
-
-        /* ---------------------------------------------------------------
-         * PHASE 3: ACCEPT WITH CLIENT ADDRESS
-         * We pass &client_addr so accept() fills in the client's IP.
-         * client_len must be set to the struct size before calling.
-         * --------------------------------------------------------------- */
-        client_len = sizeof(client_addr);
-        sa = accept(net_socket, (struct sockaddr *) &client_addr, &client_len);
+        socklen_t clientLength = sizeof(clientAddress); /* observe address length */
+        sa = accept(net_socket, (struct sockaddr *) &clientAddress, &clientLength);		/* Save a section for distinct connection request */
         if (sa < 0) fatal("accept failed");
 
-        /* Convert binary IP to readable string e.g. "132.170.1.5"         */
-        client_ip = inet_ntoa(client_addr.sin_addr);
+        char *client_IP = inet_ntoa(clientAddress.sin_addr);
 
-        /* Read filename from socket                                         */
-        read(sa, buf, BUF_SIZE);
+        read(sa, buf, BUF_SIZE);		/* read file name from socket */
 
-        /* ---------------------------------------------------------------
-         * PHASE 4: READ BYTE RANGE FROM CLIENT
-         * Client sends start and end as raw integers right after filename.
-         * We read them back in the same order they were sent.
-         * --------------------------------------------------------------- */
-        read(sa, &start_byte, sizeof(int));
-        read(sa, &end_byte, sizeof(int));
-
-        /* ---------------------------------------------------------------
-         * PHASE 3: DEBUG — print before transfer starts
-         * --------------------------------------------------------------- */
-        if (debug) printf("Sending %s to %s\n", buf, client_ip);
+        if (debugFlag) printf("Sending %s to %s\n", buf, client_IP); 
 
         /* Get and return the file. */
         fd = open(buf, O_RDONLY);   /* open the file to be sent back */
@@ -133,12 +118,9 @@ int main(int argc, char *argv[])
           total_sent += bytes;
         }
 
-        /* ---------------------------------------------------------------
-         * PHASE 3: DEBUG — print after transfer completes
-         * --------------------------------------------------------------- */
-        if (debug) printf("Finished sending %s to %s\n", buf, client_ip);
-
-        close(fd);   /* close file       */
-        close(sa);   /* close connection */
+        if (debugFlag) printf("Finished sending %s to %s\n", buf, client_IP);
+        
+        close(fd);			/* close file */
+        close(sa);			/* close connection */
   }
 }
