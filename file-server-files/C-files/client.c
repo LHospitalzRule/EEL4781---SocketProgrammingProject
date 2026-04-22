@@ -13,13 +13,10 @@ int main(int argc, char **argv)
   int startByte = 0, finByte = 0;     /* To track byte reading */
   char fileRequest[BUF_SIZE];
   
-// Check that 3 or more arguments are present
+// Check the arguments
   if (argc < 3) fatal("Usage: client <server-name> <file-name> \nOptions:\n '-s <startingByte> -e <endingByte> \n'");
-  
-  h = gethostbyname(argv[1]);		/* look up host's IP address */
-  if (!h) fatal("gethostbyname failed");
 
-  /* Check for possible byte range */
+  /* Check for possible byte range request */
   if(argc > 3){
     for(int i = 3; i < argc; i++){
         if(strcmp(argv[i], "-s") == 0){
@@ -29,6 +26,10 @@ int main(int argc, char **argv)
         }
     }
   }
+    
+  h = gethostbyname(argv[1]);		/* look up host's IP address */
+  if (!h) fatal("gethostbyname failed");
+
 
   /* ---------------------------------------------------------------
    * socket() - Socket creation, TCP
