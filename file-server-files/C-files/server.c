@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
           /* Check for file existencew */
           if(access(fileName, F_OK) == 0){
             char *existingFileError = "ERROR: File already exists on server - overwriting not allowed\n";
+            printf("%s", existingFileError);
             write(sa, existingFileError, strlen(existingFileError));
             close(sa);
             continue;
