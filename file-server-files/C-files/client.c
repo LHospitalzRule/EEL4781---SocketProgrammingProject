@@ -84,9 +84,9 @@ int main(int argc, char **argv)
             > snprintf to request specific byte range via string imposed onto buffer.
   */
   if(writeFlag){
-    snprintf(fileRequest, BUF_SIZE, "%s %d %d PUT\n", fileNameHolder, startByte, finByte);
+    snprintf(fileRequest, BUF_SIZE, "%s %d %d WRITE\n", fileNameHolder, startByte, finByte);
   } else {
-    snprintf(fileRequest, BUF_SIZE, "%s %d %d GET\n", fileNameHolder, startByte, finByte);
+    snprintf(fileRequest, BUF_SIZE, "%s %d %d READ\n", fileNameHolder, startByte, finByte);
   }
   write(net_socket, fileRequest, strlen(fileRequest));
 
