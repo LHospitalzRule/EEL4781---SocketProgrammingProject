@@ -14,6 +14,8 @@ int main(int argc, char *argv[])
 {	
   int net_socket, b, l, fd, sa, bytes, on = 1;
   int debugFlag = 0; /* monitoring DEBUG mode*/
+
+  char tempByte; /* Contain byte data for check and buffer storage */
   char buf[BUF_SIZE];		/* buffer for outgoing file */
   struct sockaddr_in channel;		/* holds IP address for*/
   struct sockaddr_in clientAddress;  /* Holds clientIP address*/
@@ -43,30 +45,68 @@ int main(int argc, char *argv[])
 
   /* Socket is now set up and bound. Wait for connection and process it. */
   while (1) {
+        int bufCtr  = 0; /* For tracking buffer size read-in requests per client */
+        int startByte = 0, finByte = 0; /* Storage space for byte-range requests */
+
         socklen_t clientLength = sizeof(clientAddress); /* observe address length */
-        sa = accept(net_socket, (struct sockaddr *) &clientAddress, &clientLength);		/* Save a section for distinct connection request */
+        sa = accept(net_socket, (struct sockaddr *) &clientAddress, &clientLength);		/* Save a socket space for distinct connection request */
         if (sa < 0) fatal("accept failed");
 
         char *client_IP = inet_ntoa(clientAddress.sin_addr);
 
-        read(sa, buf, BUF_SIZE); /* Read file name from buffer */
-
-        char filename[256];
-        strcpy(filename, buf);  /* save filename before buf gets overwritten */
-
-        if (debugFlag) printf("Sending %s to %s\n", filename, client_IP);
-
-        /* Get and return the file. */
-        fd = open(buf, O_RDONLY);	/* open the file to be sent back */
-        if (fd < 0) fatal("open failed");
-
-        while (1) {
-                bytes = read(fd, buf, BUF_SIZE);	/* read from file */
-                if (bytes <= 0) break;		/* check for end of file */
-                write(sa, buf, bytes);		/* write bytes to socket */
+        /*
+            Replace read so that it can read the incoming byte range from the fileName in the buffer.
+            Loop that continuously reads data into buffer until end-condition met.
+            Our client-side : snprintf(fileRequest, BUF_SIZE, "%s %d %d\n", argv[2], startByte, finByte);
+            > We need to match "%s %d %d\n and stop at \n"
+        */
+        //read(sa, buf, BUF_SIZE); /* Read file name from buffer */
+        while(bufCtr < BUF_SIZE - 1){
+          read(sa, &tempByte, 1);     // read in byte
+          if(tempByte == '\n') break; // Check if it's the end of the args
+          buf[bufCtr++] = tempByte;   // Add valid byte to buffer
         }
 
-        if (debugFlag) printf("Finished sending %s to %s\n", filename, client_IP);
+        buf[bufCtr] = '\0';
+
+
+        char fileName[256]; /* Store the file request title */
+        /* Read the info we stored in buf - store into their respective variables 
+             "%s %d %d\n", argv[2], startByte, finByte =>>  "%s %d %d\n", fileName, startByte, finByte
+        */
+        sscanf(buf, "%s %d %d", fileName, &startByte, &finByte);
+
+        if (debugFlag) printf("Sending %s to %s\n", fileName, client_IP);
+
+        /* Get and return the file. */
+        fd = open(fileName, O_RDONLY);	/* open the file to be sent back */
+        if (fd < 0) fatal("open failed");
+
+        /*
+            Checking for byte range or not
+        */
+        int byteRangeCHK = -1; /* -1 means send whole file, else check range*/
+        int totalSent = 0;
+
+        if(startByte > 0 && finByte >= startByte){
+            lseek(fd, startByte - 1, SEEK_SET);  /* jump to start position (1-indexed to 0-indexed) */
+            byteRangeCHK = finByte - startByte + 1; /* calculate how many bytes to send */
+        }
+        while (1) {
+          int toRead = BUF_SIZE;
+          if(byteRangeCHK != -1){
+              int remaining = byteRangeCHK - totalSent;
+              if(remaining <= 0) break;
+              if(remaining < BUF_SIZE) toRead = remaining;
+          }
+
+          bytes = read(fd, buf, toRead);	/* read from file */
+          if (bytes <= 0) break;		/* check for end of file */
+          write(sa, buf, bytes);		/* write bytes to socket */
+          totalSent += bytes;
+        }
+
+        if (debugFlag) printf("Finished sending %s to %s\n", fileName, client_IP);
         
         close(fd);			/* close file */
         close(sa);			/* close connection */
