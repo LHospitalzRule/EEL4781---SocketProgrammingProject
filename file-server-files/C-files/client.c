@@ -17,7 +17,7 @@ int main(int argc, char **argv)
   
 // Check the arguments and parameters
   if (argc < 3) fatal("Usage: client <server-name> <file-name> \n\nOptions:\
-    \n     Request a section of a file:       -s <startingByte> -e <endingByte>\
+    \n     Request a section of a file:       client <server-name> <file-name> -s <startingByte> -e <endingByte>\
     \n     Upload a file to the server:       client <server-name> -w <file-name>\n");
 
  /* Check for write. Once checked, swap -w and the fileName because it's easier to work with*/
