@@ -102,6 +102,8 @@ int main(int argc, char *argv[])
               if(bytes <= 0) break;
               fwrite(buf, 1, bytes, outfile);   /* write to local file */
           }
+
+          if(debugFlag) printf("A file has been uploaded. File-name: %s\n", fileName);
           fclose(outfile);
 
 
