@@ -82,10 +82,28 @@ int main(int argc, char *argv[])
         fd = open(fileName, O_RDONLY);	/* open the file to be sent back */
         if (fd < 0) fatal("open failed");
 
+        /*
+            Checking for byte range or not
+        */
+        int byteRangeCHK = -1; /* -1 means send whole file, else check range*/
+        int totalSent = 0;
+
+        if(startByte > 0 && finByte >= startByte){
+            lseek(fd, startByte - 1, SEEK_SET);  /* jump to start position (1-indexed to 0-indexed) */
+            byteRangeCHK = finByte - startByte + 1; /* calculate how many bytes to send */
+        }
         while (1) {
-                bytes = read(fd, buf, BUF_SIZE);	/* read from file */
-                if (bytes <= 0) break;		/* check for end of file */
-                write(sa, buf, bytes);		/* write bytes to socket */
+          int toRead = BUF_SIZE;
+          if(byteRangeCHK != -1){
+              int remaining = byteRangeCHK - totalSent;
+              if(remaining <= 0) break;
+              if(remaining < BUF_SIZE) toRead = remaining;
+          }
+
+          bytes = read(fd, buf, toRead);	/* read from file */
+          if (bytes <= 0) break;		/* check for end of file */
+          write(sa, buf, bytes);		/* write bytes to socket */
+          totalSent += bytes;
         }
 
         if (debugFlag) printf("Finished sending %s to %s\n", fileName, client_IP);
