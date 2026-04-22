@@ -13,9 +13,9 @@ Instructions to run:
 	- ./server DEBUG=1 	>> This runs the server while also displaying messages of its activities
 
 4) Start client next - there are 3 options:
-	- ./client <server-name> <file-name>	  >> This is the base format, it will find the file in the server and receive it
-	- ./client <server-name> -w <file-name>   >> This starts write-mode, allowing the user to upload files to the server
-	- ./client <server-name> <file-name> -s <starting value> -e <final byte> 
+	- ./client '<server-name>' <file-name>	  >> This is the base format, it will find the file in the server and receive it
+	- ./client '<server-name>' -w '<file-name>'   >> This starts write-mode, allowing the user to upload files to the server
+	- ./client '<server-name> <file-name>' -s '<starting value>' -e '<final byte>' 
 		>> This will allow the user to request a specific section of a desired file. It can be write -e first follow by -s, but being consistent with the pre-determined format is recommended.
 
 NOTE(s):
