@@ -11,11 +11,21 @@ int main(int argc, char **argv)
   struct hostent *h;		/* info about server */
   struct sockaddr_in channel;		/* holds IP address */
   int startByte = 0, finByte = 0;     /* To track byte reading */
-  char fileRequest[BUF_SIZE];
+  char fileRequest[BUF_SIZE]; // Buffer to hold requested fileName
+  char *fileNameHolder = NULL; // temporary storage for the requested file
+  int writeFlag = 0; /* Monitoring for client-write requests */
   
-// Check the arguments
+// Check the arguments and parameters
   if (argc < 3) fatal("Usage: client <server-name> <file-name> \n\nOptions:\n \"Request a range: -s <startingByte> -e <endingByte>\"\nUpload a file to the server: \"client <server-name> [-w] <file-name>\"\n");
 
+ /* Check for write. Once checked, swap -w and the fileName because it's easier to work with*/
+  if(strcmp(argv[2], "-w") == 0){
+     writeFlag = 1;
+     fileNameHolder = argv[3];  /* filename is after -w */
+ } else {
+     fileNameHolder = argv[2];  /* no -w, filename is here */
+ }
+  
   /* Check for possible byte range request */
   if(argc > 3){
     for(int i = 3; i < argc; i++){
@@ -73,34 +83,60 @@ int main(int argc, char **argv)
         Added:
             > snprintf to request specific byte range via string imposed onto buffer.
   */
-  snprintf(fileRequest, BUF_SIZE, "%s %d %d\n", argv[2], startByte, finByte);
+  if(writeFlag){
+    snprintf(fileRequest, BUF_SIZE, "%s %d %d WRITE\n", fileNameHolder, startByte, finByte);
+  } else {
+    snprintf(fileRequest, BUF_SIZE, "%s %d %d READ\n", fileNameHolder, startByte, finByte);
+  }
   write(net_socket, fileRequest, strlen(fileRequest));
 
   /* EXAMPLE: ./client <serverName> <fileName>
             ./client eustis.eecs.ucf.edu fileName.txt
   */
-  FILE *outfile = fopen(argv[2], "wb");
-    if (!outfile) fatal("fopen() failed — cannot create output file");
+  if(writeFlag){
+    /* -------
+        PUT - Upload local file to server.
+        Open the local file, read it, and send it over the socket.
+       -------
+    */
+    FILE *infile = fopen(fileNameHolder, "rb");
+    if(!infile) fatal("Error: file not found locally");
+    
+    while(1){
+        bytes = fread(buf, 1, BUF_SIZE, infile);  /* read from local file */
+        if(bytes <= 0) break;
+        write(net_socket, buf, bytes);             /* send bytes to server */
+    }
+    fclose(infile);
 
-    while (1) {
-        bytes = read(net_socket, buf, BUF_SIZE); /* read a chunk from socket  */
-        if (bytes <= 0) break;                   /* End if no bytes were observed in the socket */
+  } else {
+    /* -------
+        GET - Download file from server.
+        Receive file data from server and save it locally.
+       -------
+    */
+    FILE *outfile = fopen(fileNameHolder, "wb");
+    if(!outfile) fatal("fopen() failed — cannot create output file");
 
+    while(1){
+        bytes = read(net_socket, buf, BUF_SIZE);   /* read a chunk from socket */
+        if(bytes <= 0) break;                      /* End if no bytes were observed in the socket */
 
-        if(strncmp(buf, "ERROR:", 6) == 0){ // checks for the first few words in the error m
-            printf("%s", buf);  /* print the error message */
+        if(strncmp(buf, "ERROR:", 6) == 0){        /* checks for the first few words in the error message */
+            printf("%s", buf);                     /* print the error message */
             fclose(outfile);
             close(net_socket);
             exit(1);
         }
 
-        fwrite(buf, 1, bytes, outfile);          /* write exactly those bytes into a file */
+        fwrite(buf, 1, bytes, outfile);            /* write exactly those bytes into a file */
     }
- 
-    /* ---------------------------------------------------------------
-     * CLEANUP
-     * Close both the file and the socket when done.
-     * --------------------------------------------------------------- */
     fclose(outfile);
-    close(net_socket);
+  }
+
+  /* ---------------------------------------------------------------
+   * CLEANUP
+   * Close both the file and the socket when done.
+   * --------------------------------------------------------------- */
+  close(net_socket);
 }

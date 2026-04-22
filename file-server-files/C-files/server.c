@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 
   char tempByte; /* Contain byte data for check and buffer storage */
   char buf[BUF_SIZE];		/* buffer for outgoing file */
+  char mode[8];
   struct sockaddr_in channel;		/* holds IP address for*/
   struct sockaddr_in clientAddress;  /* Holds clientIP address*/
   
@@ -75,51 +76,84 @@ int main(int argc, char *argv[])
         /* Read the info we stored in buf - store into their respective variables 
              "%s %d %d\n", argv[2], startByte, finByte =>>  "%s %d %d\n", fileName, startByte, finByte
         */
-        sscanf(buf, "%s %d %d", fileName, &startByte, &finByte);
-        
-        /* Get and return the file. */
-        fd = open(fileName, O_RDONLY);	/* open the file to be sent back */
-        
-        /* File not found */
-        if (fd < 0){ 
-          char *fileNotFound = "ERROR: File not found\n"; // error message
-          printf("%s", fileNotFound);
-          write(sa, fileNotFound, strlen(fileNotFound)); 
-          close(sa);
-          continue;  /* Close the socket, keep the server runnig */
-          //fatal("Open Failed. File not detected... ending server activity.");
-        }
+        sscanf(buf, "%s %d %d %s", fileName, &startByte, &finByte, mode);
 
-        if (debugFlag) printf("Sending %s to %s\n", fileName, client_IP);
+        if(strcmp(mode, "WRITE") == 0){
 
-        /*
-            Checking for byte range or not
-        */
-        int byteRangeCHK = -1; /* -1 means send whole file, else check range*/
-        int totalSent = 0;
-
-        if(startByte > 0 && finByte >= startByte){
-            printf("Byte Range request detected. Sending the data range requested.\n");
-            lseek(fd, startByte - 1, SEEK_SET);  /* jump to start position (1-indexed to 0-indexed) */
-            byteRangeCHK = finByte - startByte + 1; /* calculate how many bytes to send */
-        }
-        while (1) {
-          int toRead = BUF_SIZE;
-          if(byteRangeCHK != -1){
-              int remaining = byteRangeCHK - totalSent;
-              if(remaining <= 0) break;
-              if(remaining < BUF_SIZE) toRead = remaining;
+          /* Check for file existencew */
+          if(access(fileName, F_OK) == 0){
+            char *existingFileError = "ERROR: File already exists on server - overwriting not allowed\n";
+            write(sa, existingFileError, strlen(existingFileError));
+            close(sa);
+            continue;
           }
 
-          bytes = read(fd, buf, toRead);	/* read from file */
-          if (bytes <= 0) break;		/* check for end of file */
-          write(sa, buf, bytes);		/* write bytes to socket */
-          totalSent += bytes;
+          /* [WRITE] - Server receeiving file from client */
+          FILE *outfile = fopen(fileName, "wb");
+          if(!outfile){
+            char *fileNotFound = "ERROR: Cannot write file\n"; // error message
+            printf("%s", fileNotFound);
+            write(sa, fileNotFound, strlen(fileNotFound)); 
+            close(sa);
+            continue;  /* Close the socket, keep the server runnig */
+          }
+          while(1){
+              bytes = read(sa, buf, BUF_SIZE);  /* read from client */
+              if(bytes <= 0) break;
+              fwrite(buf, 1, bytes, outfile);   /* write to local file */
+          }
+          fclose(outfile);
+
+
+        } else {
+
+              /* Get and return the file. */
+          fd = open(fileName, O_RDONLY);	/* open the file to be sent back */
+          
+          /* File not found */
+          if (fd < 0){ 
+            char *fileNotFound = "ERROR: File not found\n"; // error message
+            printf("%s", fileNotFound);
+            write(sa, fileNotFound, strlen(fileNotFound)); 
+            close(sa);
+            continue;  /* Close the socket, keep the server runnig */
+            //fatal("Open Failed. File not detected... ending server activity.");
+          }
+
+          if (debugFlag) printf("Sending %s to %s\n", fileName, client_IP);
+
+          /*
+              Checking for byte range or not
+          */
+          int byteRangeCHK = -1; /* -1 means send whole file, else check range*/
+          int totalSent = 0;
+
+          /* Preparing the range of bytes */
+          if(startByte > 0 && finByte >= startByte){
+              printf("Byte Range request detected. Sending the data range requested.\n");
+              lseek(fd, startByte - 1, SEEK_SET);  /* jump to start position (1-indexed to 0-indexed) */
+              byteRangeCHK = finByte - startByte + 1; /* calculate how many bytes to send */
+          }
+
+          /* Reading the range of bytes */
+          while (1) {
+            int toRead = BUF_SIZE; /* Count of bytes to read */
+            if(byteRangeCHK != -1){
+                int remaining = byteRangeCHK - totalSent;
+                if(remaining <= 0) break;
+                if(remaining < BUF_SIZE) toRead = remaining;
+            }
+
+            bytes = read(fd, buf, toRead);	/* read from file */
+            if (bytes <= 0) break;		/* check for end of file */
+            write(sa, buf, bytes);		/* write bytes to socket */
+            totalSent += bytes;
+          }
+        
+          close(fd);			/* close file */
+          if (debugFlag) printf("Finished sending %s to %s\n", fileName, client_IP);
         }
 
-        if (debugFlag) printf("Finished sending %s to %s\n", fileName, client_IP);
-        
-        close(fd);			/* close file */
         close(sa);			/* close connection */
   }
 }
