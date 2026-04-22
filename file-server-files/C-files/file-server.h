@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#define SERVER_PORT 2345		/* arbitrary, but client & server must agree */
+#define SERVER_PORT 23455		/* arbitrary, but client & server must agree */
 #define BUF_SIZE 4096		/* block transfer size */
 
 void fatal(char *string)
