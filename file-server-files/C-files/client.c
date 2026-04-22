@@ -14,7 +14,7 @@ int main(int argc, char **argv)
   char fileRequest[BUF_SIZE];
   
 // Check the arguments
-  if (argc < 3) fatal("Usage: client <server-name> <file-name> \nOptions:\n '-s <startingByte> -e <endingByte> \n'");
+  if (argc < 3) fatal("Usage: client <server-name> <file-name> \n\nOptions:\n \"-s <startingByte> -e <endingByte>\"");
 
   /* Check for possible byte range request */
   if(argc > 3){
@@ -27,6 +27,9 @@ int main(int argc, char **argv)
     }
   }
     
+/*
+*/
+
   h = gethostbyname(argv[1]);		/* look up host's IP address */
   if (!h) fatal("gethostbyname failed");
 
