@@ -76,9 +76,7 @@ int main(int argc, char *argv[])
              "%s %d %d\n", argv[2], startByte, finByte =>>  "%s %d %d\n", fileName, startByte, finByte
         */
         sscanf(buf, "%s %d %d", fileName, &startByte, &finByte);
-
-        if (debugFlag) printf("Sending %s to %s\n", fileName, client_IP);
-
+        
         /* Get and return the file. */
         fd = open(fileName, O_RDONLY);	/* open the file to be sent back */
         
@@ -90,6 +88,9 @@ int main(int argc, char *argv[])
           continue;  /* Close the socket, keep the server runnig */
           //fatal("Open Failed. File not detected... ending server activity.");
         }
+
+        if (debugFlag) printf("Sending %s to %s\n", fileName, client_IP);
+        
         /*
             Checking for byte range or not
         */
