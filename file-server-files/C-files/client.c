@@ -28,7 +28,17 @@ int main(int argc, char **argv)
   }
     
 /*
+  Validating Byte range. Error check valid range
 */
+ if(startByte < 0 || finByte < 0){
+    fatal("Error: byte range values must be positive integers");
+ }
+ if((startByte == 0 && finByte > 0) || (startByte > 0 && finByte == 0)){
+     fatal("Error: must provide both -s and -e flags together");
+ }
+ if(startByte > 0 && finByte < startByte){
+     fatal("Error: END_BYTE must be greater than or equal to START_BYTE");
+ }
 
   h = gethostbyname(argv[1]);		/* look up host's IP address */
   if (!h) fatal("gethostbyname failed");
