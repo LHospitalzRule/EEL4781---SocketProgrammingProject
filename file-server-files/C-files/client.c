@@ -123,28 +123,42 @@ int main(int argc, char **argv)
     fclose(infile);
 
   } else {
-    /* -------
-        READ - Download file from server.
-        Receive file data from server and save it locally.
-       -------
-    */
-    while(1){
-        bytes = read(net_socket, buf, BUF_SIZE);   /* read a chunk from socket */
-        if(bytes <= 0) break;                      /* End if no bytes were observed in the socket */
+        /* -------
+            READ - Download file from server.
+            Receive file data from server and save it locally.
+        -------
+        */
 
+        /* Read in the server message */
+        bytes = read(net_socket, buf, BUF_SIZE);   /* read a chunk from socket */
+        if(bytes <= 0) {
+            close(net_socket);
+            exit(1);
+        }                    /* End if no bytes were observed in the socket */
+
+        // Check for server-side errors
         if(strncmp(buf, "ERROR:", 6) == 0){        /* checks for the first few words in the error message */
             printf("%s", buf);                     /* print the error message */
-            fclose(outfile);
             close(net_socket);
             exit(1);
         }
+
+        /* No error, create the file and write into it */
         FILE *outfile = fopen(fileNameHolder, "wb");
         if(!outfile) fatal("fopen() failed — cannot create output file");
 
-        fwrite(buf, 1, bytes, outfile);            /* write exactly those bytes into a file */
+        fwrite(buf, 1, bytes, outfile);  /* write the first return from the server */
+
+        /* Write into the file */
+        while(1){
+            bytes = read(net_socket, buf, BUF_SIZE);
+            if(bytes <= 0) break;
+            fwrite(buf, 1, bytes, outfile);   
+        }
+
+        fclose(outfile);      /* write exactly those bytes into a file */
     }
-    fclose(outfile);
-  }
+    
 
   /* ---------------------------------------------------------------
    * CLEANUP
