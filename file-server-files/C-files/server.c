@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
         /* File not found */
         if (fd < 0){ 
           char *fileNotFound = "ERROR: File not found\n"; // error message
+          printf("%s", fileNotFound);
           write(sa, fileNotFound, strlen(fileNotFound)); 
           close(sa);
           continue;  /* Close the socket, keep the server runnig */
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
         }
 
         if (debugFlag) printf("Sending %s to %s\n", fileName, client_IP);
-        
+
         /*
             Checking for byte range or not
         */
