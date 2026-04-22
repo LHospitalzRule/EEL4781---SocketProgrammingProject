@@ -16,7 +16,7 @@ int main(int argc, char **argv)
   int writeFlag = 0; /* Monitoring for client-write requests */
   
 // Check the arguments and parameters
-  if (argc < 3) fatal("Usage: client <server-name> <file-name> \n\n     Options:\nRequest a section of a file: \"-s <startingByte> -e <endingByte>\"\n     Upload a file to the server: \"client <server-name> [-w] <file-name>\"\n");
+  if (argc < 3) fatal("Usage: client <server-name> <file-name> \n\nOptions:\n     Request a section of a file: \"-s <startingByte> -e <endingByte>\"\n     Upload a file to the server: \"client <server-name> [-w] <file-name>\"\n");
 
  /* Check for write. Once checked, swap -w and the fileName because it's easier to work with*/
   if(strcmp(argv[2], "-w") == 0){
