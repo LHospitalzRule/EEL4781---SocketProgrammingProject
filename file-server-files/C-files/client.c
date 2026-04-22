@@ -102,8 +102,10 @@ int main(int argc, char **argv)
        -------
     */
     FILE *infile = fopen(fileNameHolder, "rb");
-    if(!infile) fatal("Error: file not found locally");
-    
+    if(!infile) {
+        close(net_socket);
+        fatal("Error: file not found locally");
+    }
     while(1){
         bytes = fread(buf, 1, BUF_SIZE, infile);  /* read from local file */
         if(bytes <= 0) break;
