@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
   /* Check for DEBUG flag */
   if(argc==2 && strcmp(argv[1], "DEBUG=1") == 0){
     debugFlag = 1;
+    printf("DEBUG Mode ON. Displaying info...\n");
   }
 
   /* Build address structure to bind to socket. */
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
 
         /* Get and return the file. */
         fd = open(fileName, O_RDONLY);	/* open the file to be sent back */
-        if (fd < 0) fatal("open failed");
+        if (fd < 0) fatal("Open Failed. File not detected... ending server activity.");
 
         /*
             Checking for byte range or not
@@ -89,6 +90,7 @@ int main(int argc, char *argv[])
         int totalSent = 0;
 
         if(startByte > 0 && finByte >= startByte){
+            printf("Byte Range request detected. Sending the data range requested.")
             lseek(fd, startByte - 1, SEEK_SET);  /* jump to start position (1-indexed to 0-indexed) */
             byteRangeCHK = finByte - startByte + 1; /* calculate how many bytes to send */
         }
