@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
           
           /* File not found */
           if (fd < 0){ 
-            char *fileNotFound = "ERROR: File not found\n"; // error message
+            char *fileNotFound = "ERROR: File not found on server\n"; // error message
             printf("%s", fileNotFound);
             write(sa, fileNotFound, strlen(fileNotFound)); 
             close(sa);
