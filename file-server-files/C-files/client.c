@@ -14,7 +14,7 @@ int main(int argc, char **argv)
   char fileRequest[BUF_SIZE];
   
 // Check the arguments
-  if (argc < 3) fatal("Usage: client <server-name> <file-name> \n\nOptions:\n \"-s <startingByte> -e <endingByte>\"");
+  if (argc < 3) fatal("Usage: client <server-name> <file-name> \n\nOptions:\n \"Request a range: -s <startingByte> -e <endingByte>\"\nUpload a file to the server: \"client <server-name> [-w] <file-name>\"\n");
 
   /* Check for possible byte range request */
   if(argc > 3){
