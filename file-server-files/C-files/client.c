@@ -85,6 +85,15 @@ int main(int argc, char **argv)
     while (1) {
         bytes = read(net_socket, buf, BUF_SIZE); /* read a chunk from socket  */
         if (bytes <= 0) break;                   /* End if no bytes were observed in the socket */
+
+
+        if(strncmp(buf, "ERROR:", 6) == 0){ // checks for the first few words in the error m
+            printf("%s", buf);  /* print the error message */
+            fclose(outfile);
+            close(net_socket);
+            exit(1);
+        }
+
         fwrite(buf, 1, bytes, outfile);          /* write exactly those bytes into a file */
     }
  
