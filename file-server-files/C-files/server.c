@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         int totalSent = 0;
 
         if(startByte > 0 && finByte >= startByte){
-            printf("Byte Range request detected. Sending the data range requested.")
+            printf("Byte Range request detected. Sending the data range requested.\n")
             lseek(fd, startByte - 1, SEEK_SET);  /* jump to start position (1-indexed to 0-indexed) */
             byteRangeCHK = finByte - startByte + 1; /* calculate how many bytes to send */
         }
