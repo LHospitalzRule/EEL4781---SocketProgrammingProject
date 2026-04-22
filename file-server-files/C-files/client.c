@@ -11,11 +11,21 @@ int main(int argc, char **argv)
   struct hostent *h;		/* info about server */
   struct sockaddr_in channel;		/* holds IP address */
   int startByte = 0, finByte = 0;     /* To track byte reading */
-  char fileRequest[BUF_SIZE];
+  char fileRequest[BUF_SIZE]; // Buffer to hold requested fileName
+  char *fileNameHolder = NULL; // temporary storage for the requested file
+  int writeFlag = 0; /* Monitoring for client-write requests */
   
-// Check the arguments
+// Check the arguments and parameters
   if (argc < 3) fatal("Usage: client <server-name> <file-name> \n\nOptions:\n \"Request a range: -s <startingByte> -e <endingByte>\"\nUpload a file to the server: \"client <server-name> [-w] <file-name>\"\n");
 
+ /* Check for write. Once checked, swap -w and the fileName because it's easier to work with*/
+  if(strcmp(argv[2], "-w") == 0){
+     writeFlag = 1;
+     fileNameHolder = argv[3];  /* filename is after -w */
+ } else {
+     fileNameHolder = argv[2];  /* no -w, filename is here */
+ }
+  
   /* Check for possible byte range request */
   if(argc > 3){
     for(int i = 3; i < argc; i++){
@@ -73,13 +83,17 @@ int main(int argc, char **argv)
         Added:
             > snprintf to request specific byte range via string imposed onto buffer.
   */
-  snprintf(fileRequest, BUF_SIZE, "%s %d %d\n", argv[2], startByte, finByte);
+  if(writeFlag){
+    snprintf(fileRequest, BUF_SIZE, "%s %d %d PUT\n", fileNameHolder, startByte, finByte);
+  } else {
+    snprintf(fileRequest, BUF_SIZE, "%s %d %d GET\n", fileNameHolder, startByte, finByte);
+  }
   write(net_socket, fileRequest, strlen(fileRequest));
 
   /* EXAMPLE: ./client <serverName> <fileName>
             ./client eustis.eecs.ucf.edu fileName.txt
   */
-  FILE *outfile = fopen(argv[2], "wb");
+  FILE *outfile = fopen(fileNameHolder, "wb");
     if (!outfile) fatal("fopen() failed — cannot create output file");
 
     while (1) {
