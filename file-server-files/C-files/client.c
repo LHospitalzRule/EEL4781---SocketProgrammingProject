@@ -55,6 +55,15 @@ int main(int argc, char **argv)
   h = gethostbyname(argv[1]);		/* look up host's IP address */
   if (!h) fatal("gethostbyname failed");
 
+  /*
+    If a [write] request was made, check the file locally before connecting to server
+    
+  */
+  if(writeFlag){
+    FILE *fileCheck = fopen(fileNameHolder, "rb");
+    if(!fileCheck) fatal("Error: file not found locally");
+    fclose(fileCheck);
+  }
 
   /* ---------------------------------------------------------------
    * socket() - Socket creation, TCP
@@ -97,7 +106,7 @@ int main(int argc, char **argv)
   */
   if(writeFlag){
     /* -------
-        PUT - Upload local file to server.
+        WRITE - Upload local file to server.
         Open the local file, read it, and send it over the socket.
        -------
     */
@@ -115,7 +124,7 @@ int main(int argc, char **argv)
 
   } else {
     /* -------
-        GET - Download file from server.
+        READ - Download file from server.
         Receive file data from server and save it locally.
        -------
     */
