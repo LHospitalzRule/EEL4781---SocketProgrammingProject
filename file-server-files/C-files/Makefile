@@ -11,9 +11,7 @@
 all: 
 	gcc -o server server.c ${LIBS}
 	gcc -o client client.c ${LIBS}
-	mv client clientfolder
-	mv server serverfolder
 
 clean:
-	rm *~ *.o server client
+	rm -f server client
 
