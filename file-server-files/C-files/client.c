@@ -93,28 +93,50 @@ int main(int argc, char **argv)
   /* EXAMPLE: ./client <serverName> <fileName>
             ./client eustis.eecs.ucf.edu fileName.txt
   */
-  FILE *outfile = fopen(fileNameHolder, "wb");
-    if (!outfile) fatal("fopen() failed — cannot create output file");
+  if(writeFlag){
+    /* -------
+        PUT - Upload local file to server.
+        Open the local file, read it, and send it over the socket.
+       -------
+    */
+    FILE *infile = fopen(fileNameHolder, "rb");
+    if(!infile) fatal("Error: file not found locally");
+    
+    while(1){
+        bytes = fread(buf, 1, BUF_SIZE, infile);  /* read from local file */
+        if(bytes <= 0) break;
+        write(net_socket, buf, bytes);             /* send bytes to server */
+    }
+    fclose(infile);
 
-    while (1) {
-        bytes = read(net_socket, buf, BUF_SIZE); /* read a chunk from socket  */
-        if (bytes <= 0) break;                   /* End if no bytes were observed in the socket */
+  } else {
+    /* -------
+        GET - Download file from server.
+        Receive file data from server and save it locally.
+       -------
+    */
+    FILE *outfile = fopen(fileNameHolder, "wb");
+    if(!outfile) fatal("fopen() failed — cannot create output file");
 
+    while(1){
+        bytes = read(net_socket, buf, BUF_SIZE);   /* read a chunk from socket */
+        if(bytes <= 0) break;                      /* End if no bytes were observed in the socket */
 
-        if(strncmp(buf, "ERROR:", 6) == 0){ // checks for the first few words in the error m
-            printf("%s", buf);  /* print the error message */
+        if(strncmp(buf, "ERROR:", 6) == 0){        /* checks for the first few words in the error message */
+            printf("%s", buf);                     /* print the error message */
             fclose(outfile);
             close(net_socket);
             exit(1);
         }
 
-        fwrite(buf, 1, bytes, outfile);          /* write exactly those bytes into a file */
+        fwrite(buf, 1, bytes, outfile);            /* write exactly those bytes into a file */
     }
- 
-    /* ---------------------------------------------------------------
-     * CLEANUP
-     * Close both the file and the socket when done.
-     * --------------------------------------------------------------- */
     fclose(outfile);
-    close(net_socket);
+  }
+
+  /* ---------------------------------------------------------------
+   * CLEANUP
+   * Close both the file and the socket when done.
+   * --------------------------------------------------------------- */
+  close(net_socket);
 }
