@@ -81,8 +81,15 @@ int main(int argc, char *argv[])
 
         /* Get and return the file. */
         fd = open(fileName, O_RDONLY);	/* open the file to be sent back */
-        if (fd < 0) fatal("Open Failed. File not detected... ending server activity.");
-
+        
+        /* File not found */
+        if (fd < 0){ 
+          char *fileNotFound = "ERROR: File not found\n"; // error message
+          write(sa, fileNotFound, strlen(fileNotFound)); 
+          close(sa);
+          continue;  /* Close the socket, keep the server runnig */
+          //fatal("Open Failed. File not detected... ending server activity.");
+        }
         /*
             Checking for byte range or not
         */
